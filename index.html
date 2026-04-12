@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kris · Daily Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0f0f0e; --ink-2: #3a3a38; --ink-3: #6b6b67; --ink-4: #9a9994;
+  --paper: #faf9f6; --warm: #f3f1ec; --warm-2: #eae7e0; --rule: #dedad2;
+  --g: #1a472a; --gm: #2d6a4f; --gl: #d8f0e4; --ga: #a8d5bc;
+  --b: #1a3a5c; --bm: #2a5580; --bl: #e0ecf8;
+  --am: #b5621e; --al: #fdecd8;
+  --pm: #7c3aed; --pl: #ede8f8;
+  --rm: #be123c; --rl: #fce7f0;
+  --ym: #92400e; --yl: #fef3c7;
+  --sidebar: 190px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); display: flex; flex-direction: column; }
+
+/* TOP NAV */
+.topnav { background: var(--ink); color: var(--paper); display: flex; align-items: stretch; justify-content: space-between; height: 48px; flex-shrink: 0; position: relative; z-index: 50; }
+.tn-left { display: flex; align-items: center; gap: 0; }
+.tn-logo { font-family: 'DM Serif Display', serif; font-size: 1.05rem; padding: 0 1.1rem; color: var(--paper); white-space: nowrap; }
+.tn-logo em { color: #9fd1b8; font-style: italic; }
+.section-tabs { display: flex; align-items: stretch; gap: 0; border-left: 1px solid #222; }
+.stab { display: flex; align-items: center; gap: 6px; padding: 0 .9rem; font-size: .72rem; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: #555; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; white-space: nowrap; border: none; background: none; font-family: 'DM Sans', sans-serif; }
+.stab:hover { color: #aaa; }
+.stab.active { color: var(--paper); border-bottom: 2px solid #9fd1b8; }
+.stab-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.stab-cnt { background: #1e1e1c; color: #555; font-family: 'DM Mono', monospace; font-size: .58rem; border-radius: 99px; padding: 0 5px; }
+.stab.active .stab-cnt { background: var(--g); color: var(--gl); }
+.tn-right { display: flex; align-items: center; gap: .6rem; padding: 0 1rem; }
+.tn-date { font-family: 'DM Mono', monospace; font-size: .6rem; color: #555; }
+.deploy-btn { font-size: .65rem; font-weight: 600; padding: .3rem .7rem; border-radius: 5px; background: var(--g); color: var(--gl); border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .15s; }
+.deploy-btn:hover { background: var(--gm); }
+
+/* BODY */
+.body-wrap { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar { width: var(--sidebar); flex-shrink: 0; background: #0a0a09; border-right: 1px solid #1a1a18; display: flex; flex-direction: column; overflow-y: auto; }
+.sb-head { padding: .75rem .9rem .5rem; border-bottom: 1px solid #1a1a18; }
+.sb-section-name { font-size: .6rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #333; margin-bottom: 1px; }
+.sb-section-sub { font-size: .62rem; color: #444; font-family: 'DM Mono', monospace; }
+.sb-period-label { font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: #333; padding: .6rem .9rem .3rem; border-bottom: 1px solid #1a1a18; }
+.week-entry { padding: .45rem .9rem; cursor: pointer; border-left: 2.5px solid transparent; transition: all .12s; }
+.week-entry:hover { background: #111; }
+.week-entry.active { background: #111; border-left-color: var(--gm); }
+.we-date { font-family: 'DM Mono', monospace; font-size: .66rem; color: #666; display: block; }
+.week-entry.active .we-date { color: #9fd1b8; }
+.we-meta { font-size: .58rem; color: #333; font-family: 'DM Mono', monospace; margin-top: 1px; }
+.today-tag { display: inline-block; background: var(--g); color: var(--gl); font-size: .5rem; font-weight: 600; padding: 0 4px; border-radius: 3px; margin-left: 3px; vertical-align: middle; }
+.sb-footer { margin-top: auto; padding: .75rem .9rem; border-top: 1px solid #1a1a18; }
+.unsub { font-size: .6rem; color: #333; text-decoration: underline; cursor: pointer; background: none; border: none; font-family: 'DM Sans', sans-serif; }
+
+/* MAIN */
+.main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.tab-panel { display: none; padding: 1.1rem 1.4rem; max-width: 840px; margin: 0 auto; width: 100%; }
+.tab-panel.active { display: block; }
+
+/* TOOLBAR */
+.toolbar { display: flex; gap: .4rem; margin-bottom: .9rem; flex-wrap: wrap; align-items: center; }
+.search-wrap { flex: 1; min-width: 150px; position: relative; }
+.search-wrap input { width: 100%; border: 1.5px solid var(--rule); border-radius: 6px; padding: .38rem .65rem .38rem 1.7rem; font-size: .8rem; background: #fff; font-family: 'DM Sans', sans-serif; color: var(--ink); outline: none; }
+.search-wrap input:focus { border-color: var(--ink); }
+.search-ic { position: absolute; left: .5rem; top: 50%; transform: translateY(-50%); color: var(--ink-4); font-size: .8rem; pointer-events: none; }
+.filt { font-size: .68rem; padding: .3rem .7rem; border: 1.5px solid var(--rule); border-radius: 99px; background: #fff; cursor: pointer; font-family: 'DM Sans', sans-serif; color: var(--ink-3); transition: all .15s; }
+.filt:hover, .filt.on { border-color: var(--ink); background: var(--ink); color: #fff; }
+
+/* STATS */
+.stats { display: flex; gap: .6rem; background: var(--warm); border: 1.5px solid var(--rule); border-radius: 8px; padding: .55rem .9rem; margin-bottom: .9rem; flex-wrap: wrap; }
+.stat { display: flex; flex-direction: column; gap: 1px; }
+.stat-n { font-family: 'DM Mono', monospace; font-size: .9rem; font-weight: 500; }
+.stat-l { font-size: .58rem; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-4); }
+.stat-div { width: 1px; background: var(--rule); align-self: stretch; }
+
+/* SECTION LABEL */
+.sec-lbl { font-size: .6rem; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-4); border-bottom: 1px solid var(--rule); padding-bottom: .35rem; margin: 1rem 0 .65rem; }
+.sec-lbl:first-of-type { margin-top: 0; }
+
+/* CARDS */
+.card { background: #fff; border: 1.5px solid var(--rule); border-radius: 9px; padding: .9rem 1.1rem; margin-bottom: .55rem; transition: border-color .15s; }
+.card:hover { border-color: #bbb; }
+.card.s-go { border-left: 3.5px solid var(--gm); }
+.card.s-save { border-left: 3.5px solid #6a8f7a; }
+.card.s-skip { opacity: .38; }
+.card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; margin-bottom: .3rem; }
+.card-title { font-family: 'DM Serif Display', serif; font-size: .95rem; line-height: 1.3; flex: 1; }
+.card-title a { color: var(--b); text-decoration: none; }
+.card-title a:hover { text-decoration: underline; }
+.lbadge { font-size: .57rem; font-weight: 600; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; display: inline-block; white-space: nowrap; }
+.lb-live { background: var(--gl); color: var(--g); }
+.lb-web { background: var(--bl); color: var(--b); }
+.cost { font-family: 'DM Mono', monospace; font-size: .66rem; font-weight: 500; padding: .2rem .5rem; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+.cost-free { background: var(--gl); color: var(--g); }
+.cost-paid { background: var(--warm-2); color: var(--ink-2); }
+.cost-varies { background: var(--yl); color: var(--ym); }
+.card-meta { font-size: .68rem; color: var(--ink-4); margin-bottom: .45rem; }
+.sep { margin: 0 .3rem; }
+.tags { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: .5rem; }
+.tag { font-size: .58rem; font-weight: 500; letter-spacing: .02em; padding: 1px 6px; border-radius: 99px; }
+.tg { color: var(--g); background: var(--gl); }
+.tb { color: var(--b); background: var(--bl); }
+.tp { color: var(--pm); background: var(--pl); }
+.tr { color: var(--rm); background: var(--rl); }
+.ty { color: var(--ym); background: var(--yl); }
+.tnew { color: var(--g); background: var(--gl); }
+.why { font-size: .75rem; color: var(--ink-2); line-height: 1.6; border-left: 2.5px solid var(--rule); padding-left: .6rem; margin-bottom: .6rem; }
+.actions { display: flex; gap: .35rem; flex-wrap: wrap; align-items: center; }
+.btn { font-size: .68rem; font-family: 'DM Sans', sans-serif; font-weight: 500; padding: .32rem .75rem; border-radius: 6px; border: 1.5px solid; cursor: pointer; transition: all .15s; white-space: nowrap; text-decoration: none; display: inline-block; }
+.b-go { border-color: var(--gm); color: var(--gm); background: #fff; }
+.b-go:hover, .b-go.on { background: var(--gm); color: #fff; }
+.b-save { border-color: #6a8f7a; color: #6a8f7a; background: #fff; }
+.b-save:hover, .b-save.on { background: #6a8f7a; color: #fff; }
+.b-skip { border-color: var(--rule); color: var(--ink-4); background: #fff; }
+.b-skip:hover, .b-skip.on { background: var(--warm-2); border-color: #bbb; color: var(--ink-2); }
+.b-link { border-color: var(--b); color: var(--b); background: #fff; font-size: .62rem; padding: .24rem .58rem; border-radius: 4px; }
+.b-link:hover { background: var(--b); color: #fff; }
+.status-pill { font-size: .58rem; font-weight: 600; padding: 1px 6px; border-radius: 99px; }
+.sp-go { background: var(--gl); color: var(--g); }
+.sp-save { background: #e8f3ec; color: #3a6b4f; }
+.sp-skip { background: var(--warm-2); color: var(--ink-4); }
+
+/* EMPTY */
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--ink-4); }
+.empty-icon { font-size: 1.8rem; margin-bottom: .5rem; }
+.empty h3 { font-family: 'DM Serif Display', serif; font-size: .95rem; color: var(--ink-2); margin-bottom: .3rem; }
+.empty p { font-size: .78rem; max-width: 300px; margin: 0 auto; line-height: 1.6; }
+
+/* DEPLOY MODAL */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(10,10,9,.7); z-index: 200; align-items: center; justify-content: center; }
+.overlay.show { display: flex; }
+.modal { background: #fff; border-radius: 12px; padding: 1.5rem; max-width: 480px; width: 92%; }
+.modal h2 { font-family: 'DM Serif Display', serif; font-size: 1.15rem; margin-bottom: .35rem; }
+.modal p { font-size: .8rem; color: var(--ink-2); margin-bottom: .9rem; line-height: 1.6; }
+.modal label { font-size: .74rem; font-weight: 500; color: var(--ink-2); display: block; margin-bottom: .3rem; }
+.modal input, .modal select { width: 100%; border: 1.5px solid var(--rule); border-radius: 6px; padding: .5rem .7rem; font-family: 'DM Mono', monospace; font-size: .75rem; color: var(--ink); outline: none; margin-bottom: .75rem; }
+.modal input:focus { border-color: var(--ink); }
+.modal-foot { display: flex; gap: .5rem; justify-content: flex-end; margin-top: .5rem; }
+.b-cancel { font-size: .75rem; padding: .4rem .85rem; border: 1.5px solid var(--rule); border-radius: 6px; background: #fff; cursor: pointer; font-family: 'DM Sans', sans-serif; color: var(--ink-2); }
+.b-confirm { font-size: .75rem; padding: .4rem 1rem; border: 1.5px solid var(--g); border-radius: 6px; background: var(--g); color: #fff; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 500; }
+.b-confirm:disabled { opacity: .5; cursor: not-allowed; }
+.deploy-status { font-size: .74rem; color: var(--ink-2); font-family: 'DM Mono', monospace; margin-top: .5rem; min-height: 1.1rem; }
+.deploy-status.ok { color: var(--g); }
+.deploy-status.err { color: var(--rm); }
+
+/* TOAST */
+.toast { position: fixed; bottom: 1rem; right: 1rem; background: var(--ink); color: #fff; font-size: .74rem; padding: .55rem .9rem; border-radius: 8px; z-index: 300; opacity: 0; transform: translateY(5px); transition: all .2s; pointer-events: none; font-family: 'DM Sans', sans-serif; max-width: 270px; }
+.toast.show { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 600px) {
+  :root { --sidebar: 0px; }
+  .sidebar { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <div class="tn-left">
+    <div class="tn-logo">Kris · <em>Daily Tracker</em></div>
+    <div class="section-tabs" id="section-tabs">
+      <button class="stab active" data-tab="jobs" onclick="switchTab('jobs')">
+        <span class="stab-dot" style="background:#2d6a4f"></span>
+        Jobs <span class="stab-cnt" id="cnt-jobs">9</span>
+      </button>
+      <button class="stab" data-tab="family" onclick="switchTab('family')">
+        <span class="stab-dot" style="background:#7c3aed"></span>
+        Family <span class="stab-cnt" id="cnt-family">0</span>
+      </button>
+      <button class="stab" data-tab="date" onclick="switchTab('date')">
+        <span class="stab-dot" style="background:#be123c"></span>
+        Date Night <span class="stab-cnt" id="cnt-date">0</span>
+      </button>
+      <button class="stab" data-tab="hangout" onclick="switchTab('hangout')">
+        <span class="stab-dot" style="background:#1a3a5c"></span>
+        Hangout <span class="stab-cnt" id="cnt-hangout">0</span>
+      </button>
+      <button class="stab" data-tab="kids" onclick="switchTab('kids')">
+        <span class="stab-dot" style="background:#92400e"></span>
+        Boys Skills <span class="stab-cnt" id="cnt-kids">0</span>
+      </button>
+    </div>
+  </div>
+  <div class="tn-right">
+    <div class="tn-date" id="tn-date"></div>
+    <button class="deploy-btn" onclick="openDeploy()">⬆ Auto-Deploy</button>
+  </div>
+</nav>
+
+<div class="body-wrap">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-head" id="sb-head">
+      <div class="sb-section-name" id="sb-section-name">Job Alerts</div>
+      <div class="sb-section-sub" id="sb-section-sub">Daily · 70mi · $300K+</div>
+    </div>
+    <div class="sb-period-label" id="sb-period-label">Daily alerts</div>
+    <div id="period-list"></div>
+    <div class="sb-footer">
+      <button class="unsub" onclick="toast('Unsubscribe noted. Alerts will stop within 24 hours.')">Unsubscribe</button>
+    </div>
+  </div>
+
+  <!-- MAIN PANELS -->
+  <div class="main">
+
+    <!-- JOBS -->
+    <div class="tab-panel active" id="panel-jobs">
+      <div class="toolbar">
+        <div class="search-wrap"><span class="search-ic">⌕</span><input type="text" placeholder="Search roles..." id="job-search" oninput="filterCards('jobs')"></div>
+        <button class="filt on" onclick="setFilt('jobs','all',this)">All</button>
+        <button class="filt" onclick="setFilt('jobs','go',this)">Building</button>
+        <button class="filt" onclick="setFilt('jobs','save',this)">Saved</button>
+        <button class="filt" onclick="setFilt('jobs','unseen',this)">Unreviewed</button>
+      </div>
+      <div class="stats" id="job-stats"></div>
+      <div id="jobs-core"></div>
+      <div id="jobs-stretch"></div>
+    </div>
+
+    <!-- FAMILY -->
+    <div class="tab-panel" id="panel-family">
+      <div class="toolbar">
+        <div class="search-wrap"><span class="search-ic">⌕</span><input type="text" placeholder="Search activities..." id="family-search" oninput="filterCards('family')"></div>
+        <button class="filt on" onclick="setFilt('family','all',this)">All</button>
+        <button class="filt" onclick="setFilt('family','go',this)">Going</button>
+        <button class="filt" onclick="setFilt('family','save',this)">Saved</button>
+        <button class="filt" onclick="setFilt('family','unseen',this)">Unreviewed</button>
+      </div>
+      <div class="stats" id="family-stats"></div>
+      <div id="family-cards"></div>
+    </div>
+
+    <!-- DATE NIGHT -->
+    <div class="tab-panel" id="panel-date">
+      <div class="toolbar">
+        <div class="search-wrap"><span class="search-ic">⌕</span><input type="text" placeholder="Search events..." id="date-search" oninput="filterCards('date')"></div>
+        <button class="filt on" onclick="setFilt('date','all',this)">All</button>
+        <button class="filt" onclick="setFilt('date','go',this)">Going</button>
+        <button class="filt" onclick="setFilt('date','save',this)">Saved</button>
+        <button class="filt" onclick="setFilt('date','unseen',this)">Unreviewed</button>
+      </div>
+      <div class="stats" id="date-stats"></div>
+      <div id="date-cards"></div>
+    </div>
+
+    <!-- HANGOUT -->
+    <div class="tab-panel" id="panel-hangout">
+      <div class="toolbar">
+        <div class="search-wrap"><span class="search-ic">⌕</span><input type="text" placeholder="Search events..." id="hangout-search" oninput="filterCards('hangout')"></div>
+        <button class="filt on" onclick="setFilt('hangout','all',this)">All</button>
+        <button class="filt" onclick="setFilt('hangout','go',this)">Going</button>
+        <button class="filt" onclick="setFilt('hangout','save',this)">Saved</button>
+        <button class="filt" onclick="setFilt('hangout','unseen',this)">Unreviewed</button>
+      </div>
+      <div class="stats" id="hangout-stats"></div>
+      <div id="hangout-cards"></div>
+    </div>
+
+    <!-- KIDS -->
+    <div class="tab-panel" id="panel-kids">
+      <div class="toolbar">
+        <div class="search-wrap"><span class="search-ic">⌕</span><input type="text" placeholder="Search activities..." id="kids-search" oninput="filterCards('kids')"></div>
+        <button class="filt on" onclick="setFilt('kids','all',this)">All</button>
+        <button class="filt" onclick="setFilt('kids','go',this)">Doing it</button>
+        <button class="filt" onclick="setFilt('kids','save',this)">Saved</button>
+        <button class="filt" onclick="setFilt('kids','unseen',this)">Unreviewed</button>
+      </div>
+      <div class="stats" id="kids-stats"></div>
+      <div id="kids-cards"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DEPLOY MODAL -->
+<div class="overlay" id="deploy-modal">
+  <div class="modal">
+    <h2>Auto-Deploy to Netlify</h2>
+    <p>Enter your Netlify Personal Access Token and Site ID once. Claude will deploy updates directly to <strong>krisdailymail.netlify.app</strong> without you touching anything. Get your token at <strong>app.netlify.com → User Settings → Applications → Personal Access Tokens</strong>.</p>
+    <label>Netlify Personal Access Token</label>
+    <input type="password" id="netlify-token" placeholder="nfp_xxxxxxxxxxxxxxxxxxxx" />
+    <label>Site ID (from Site Settings → General)</label>
+    <input type="text" id="netlify-site" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+    <div class="deploy-status" id="deploy-status"></div>
+    <div class="modal-foot">
+      <button class="b-cancel" onclick="closeDeploy()">Cancel</button>
+      <button class="b-confirm" id="deploy-go" onclick="runDeploy()">Deploy Now ↗</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<script>
+// ═══════════════════════════════════
+// DATA
+// ═══════════════════════════════════
+
+const SECTIONS = {
+  jobs: { name: 'Job Alerts', sub: 'Daily · 70mi · $300K+', periodLabel: 'Daily alerts' },
+  family: { name: 'Family Activities', sub: 'Seattle-area · Family of 4', periodLabel: 'Weekly picks' },
+  date: { name: 'Date Night', sub: 'Seattle-area · You + wife', periodLabel: 'Weekly picks' },
+  hangout: { name: 'Friends Hangout', sub: 'Washington · Just you + friends', periodLabel: 'Weekly picks' },
+  kids: { name: "Boys Skills", sub: 'All ages · In-person & at home', periodLabel: 'Weekly picks' },
+};
+
+const PERIODS = {
+  jobs: [{ key:'2026-04-11', label:'Apr 11, 2026', isToday:true }],
+  family: [{ key:'week-apr-12', label:'Apr 12–18, 2026', isToday:true }],
+  date: [{ key:'week-apr-12', label:'Apr 12–18, 2026', isToday:true }],
+  hangout: [{ key:'week-apr-12', label:'Apr 12–18, 2026', isToday:true }],
+  kids: [{ key:'week-apr-12', label:'Apr 12–18, 2026', isToday:true }],
+};
+
+const DATA = {
+  jobs: {
+    '2026-04-11': {
+      core: [
+        { id:'amz-2827412', title:'Sr. TPM, PMO — Amazon Leo', co:'Amazon · Redmond, WA', level:'L7', url:'https://www.amazon.jobs/en/jobs/2827412/senior-technical-program-manager-pmo-amazon-leo', urlType:'live', cost:'~$350–480K TC', costClass:'cost-paid', tags:['TPM','Satellite HW','PMO'], tagC:['tb','tr','tg'], why:'Own satellite production roadmap end-to-end — HW, SW, supply chain, manufacturing, launch. TRL-based program execution at Meta and HP maps directly here. Page load confirmed today.', isNew:true },
+        { id:'amz-3201474', title:'Sr. TPM, Production Change Mgmt — Amazon Leo', co:'Amazon · Redmond, WA', level:'L7 · US citizen required', url:'https://amazon.jobs/en/jobs/3201474/sr-technical-program-manager-production-change-management-amazon-leo', urlType:'live', cost:'~$350–480K TC', costClass:'cost-paid', tags:['TPM','Mfg','Change Mgmt'], tagC:['tb','tr','tg'], why:'Own Engineering Change Control across satellite manufacturing and test. Interfaces across procurement, finance, GSE, production, warehouse, flight design, launch. HP Labs + Meta manufacturing program management is directly applicable. Confirmed live today.', isNew:true },
+        { id:'amz-2444365', title:'Principal TPM, Customer Terminals — Kuiper', co:'Amazon · Redmond, WA', level:'L7+', url:'https://www.amazon.jobs/en/jobs/2444365/principal-technical-program-manager-customer-terminals-project-kuiper', urlType:'live', cost:'~$400–560K TC', costClass:'cost-paid', tags:['TPM','Full-Box HW','EVT→MP'], tagC:['tb','tr','tp'], why:'"Full box" HW+SW product delivery — EVT, DVT, PVT, mass production. Comfort with EE, MechE, ID, FW, supply chain, CM is explicitly required. Your HP→Meta prototype-to-product arc is the core ask. Confirmed in Google search today.', isNew:true },
+        { id:'helion-nuclear', title:'Materials Science Manager — Nuclear Ceramics', co:'Helion Energy · Everett, WA', level:'Manager', url:'https://job-boards.greenhouse.io/helionenergy/jobs/4614364005', urlType:'live', cost:'⚠ Base $160–206K + equity', costClass:'cost-varies', tags:['Materials','Extreme Env','Team Lead'], tagC:['tp','tr','tg'], why:'Lead Nuclear Ceramic Materials team — plasma containment vessels, insulators, resistors. PhD materials expertise + team management + XRD/SEM/TEM/TGA depth is a rare exact match. Microsoft PPA-backed equity may be significant. Confirmed in Google search today.', isNew:true },
+        { id:'helion-rd', title:'Materials Science Manager — R&D', co:'Helion Energy · Everett, WA', level:'Manager', url:'https://job-boards.greenhouse.io/helionenergy/jobs/4620270005', urlType:'live', cost:'⚠ Base $160–206K + equity', costClass:'cost-varies', tags:['Materials','R&D','Lab Build'], tagC:['tp','tg','tr'], why:'Deploy ion beam + H/He implantation infrastructure, in-situ materials monitoring. Lab build-out expertise ($7M+ Meta, $3.5M+ HP) is a rare exact match. NDT expertise explicitly preferred. Confirmed in Google search today.', isNew:true },
+        { id:'msft-tpm', title:'Principal TPM, Cloud AI Acceleration — Microsoft', co:'Microsoft SCHIE · Redmond, WA', level:'L67+', url:'https://careers.microsoft.com/us/en/job/1239351/Principal-Technical-Program-Manager-Cloud-AI-Acceleration', urlType:'live', cost:'~$380–560K TC', costClass:'cost-paid', tags:['TPM','Cloud HW','AI Infra'], tagC:['tb','tr','tg'], why:'Principal TPM for Azure Hardware Systems & Infrastructure — the team behind Microsoft cloud server and datacenter systems. Your HW program management pedigree (HP Labs + Meta RL) at Principal level is the exact profile.', isNew:true },
+        { id:'meta-search', title:'TPM / PM — Meta Reality Labs, Redmond', co:'Meta · Redmond, WA', level:'IC5–M1 · Multiple open', url:'https://www.metacareers.com/jobs/?offices[0]=Redmond%2C%20WA&teams[0]=Technical%20Program%20Management', urlType:'web', cost:'~$380–800K TC', costClass:'cost-paid', tags:['TPM','HW Wearables','AR/VR'], tagC:['tb','tr','tp'], why:'Multiple active roles right now: NPI Ops PM Wearables ($199–272K base, 3 days ago), Displays & Optics TPM ($140–198K base, 14 days ago), NPI Product Ops Manager (posted today). Link = filtered Redmond TPM search — individual Meta URLs expire in days.', isNew:true },
+        { id:'nvidia', title:'Research Manager, Advanced Packaging — NVIDIA', co:'NVIDIA · Redmond/Santa Clara hybrid', level:'Senior Manager', url:'https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite?q=program+manager+packaging+hardware', urlType:'web', cost:'~$450–750K TC', costClass:'cost-paid', tags:['Materials','Packaging','Research'], tagC:['tp','tb','tg'], why:'NVIDIA investing heavily in chiplet integration, CoWoS, HBM. Your ILD, RDL, flip-chip, AiP, and thermal materials expertise from Meta RL aligns precisely.', isNew:false },
+        { id:'anthropic', title:'TPM, Hardware / Infrastructure — Anthropic', co:'Anthropic · SF / Remote', level:'Senior / Staff', url:'https://www.anthropic.com/careers#open-roles', urlType:'live', cost:'~$380–600K TC', costClass:'cost-paid', tags:['TPM','AI Infra','HW'], tagC:['tb','tg'], why:'PhD materials scientist who ran multi-million-dollar R&D programs at Meta-scale is a differentiated profile in the AI hardware space.', isNew:false },
+      ],
+      stretch: [
+        { id:'helion-dir', title:'Director / VP Materials Science — Helion', co:'Helion Energy · Everett, WA', level:'Director · Proactive outreach', url:'https://www.helionenergy.com/careers/', urlType:'live', cost:'⚠ ~$280–420K + equity', costClass:'cost-varies', tags:['Stretch','Director'], tagC:['ty','tp'], why:'Helion will need a Director of Materials as they scale. Recommend LinkedIn outreach to their CSO directly.', isNew:false },
+        { id:'msft-cooling', title:'Principal TPM, Liquid Cooling — Microsoft SCHIE', co:'Microsoft · Redmond, WA', level:'L67+', url:'https://careers.microsoft.com/us/en/search-results?keywords=principal+program+manager+liquid+cooling', urlType:'web', cost:'~$380–560K TC', costClass:'cost-paid', tags:['Stretch','Datacenter','Thermal'], tagC:['ty','tb','tp'], why:'Microsoft HIFE team building next-gen liquid cooling for Azure. Your thermal materials expertise (TIM, heat spreaders) and electronics packaging background directly applicable.', isNew:true },
+        { id:'spacex', title:'Sr. Program Manager — SpaceX Starlink', co:'SpaceX · Redmond, WA', level:'Sr. Manager', url:'https://www.spacex.com/careers/', urlType:'live', cost:'⚠ ~$280–400K', costClass:'cost-varies', tags:['Stretch','Aerospace HW'], tagC:['ty','tr'], why:'SpaceX Redmond builds next-gen Starlink terminals. Electronics packaging + reliability + printed electronics expertise maps directly to antenna and terminal hardware R&D.', isNew:false },
+      ]
+    }
+  },
+
+  family: {
+    'week-apr-12': [
+      { id:'fam-cherry-blossom', title:'51st Seattle Cherry Blossom & Japanese Cultural Festival', co:'Seattle Center', when:'Apr 10–12 · 10am–5pm', url:'https://www.seattlecherryblossomfestival.org/', urlType:'live', cost:'FREE', costClass:'cost-free', tags:['Outdoor','Cultural','Food'], tagC:['tg','tp','ty'], why:'Free weekend-long celebration with traditional performances, authentic Japanese food, cultural demos, and workshops. Perfect family outing with easy access. Both boys will love the energy and color.', isNew:true },
+      { id:'fam-tulip', title:'Skagit Valley Tulip Festival', co:'Skagit County · ~1hr north', when:'Through April · All day', url:'https://www.tulipfestival.org/', urlType:'live', cost:'$5–15 parking', costClass:'cost-paid', tags:['Outdoor','Road Trip','Scenic'], tagC:['tg','tp'], why:"Washington's most spectacular spring event — endless fields of blooming tulips. Go on a weekday to avoid weekend crowds. Kids love running through the rows. Pair with lunch in La Conner nearby.", isNew:true },
+      { id:'fam-mariners', title:'Seattle Mariners Home Game', co:'T-Mobile Park · SoDo', when:'Apr 12–Sept 27 · Various', url:'https://www.mlb.com/mariners/tickets', urlType:'live', cost:'$20–80+', costClass:'cost-paid', tags:['Sports','Outdoors','Classic'], tagC:['tb','tg'], why:"Perfect family excuse to get out. Boys at any age love the ballpark energy. Get lower-bowl tickets on the third base side. Hot dogs, garlic fries, and the Mariners bullpen view is great. Go on a Sunday for Family Sunday deals.", isNew:true },
+      { id:'fam-wooden-boats', title:'Free Peapod Rowboat Rentals — Center for Wooden Boats', co:'South Lake Union · Seattle', when:'Weekends · Walk-up first come', url:'https://www.cwb.org/', urlType:'live', cost:'FREE', costClass:'cost-free', tags:['Outdoor','Water','Free'], tagC:['tg','tb'], why:'Hidden gem: free one-hour rowboat rentals on Lake Union, walk-up only. Boys love rowing and feeling like sailors. Combine with a lunch stop at SLU. Easily one of the best free activities in Seattle.', isNew:true },
+      { id:'fam-mopop', title:'Museum of Pop Culture (MoPOP) — Video Game Exhibits', co:'Seattle Center', when:'Daily · 10am–5pm', url:'https://www.mopop.org/', urlType:'live', cost:'$30 adults / $20 kids', costClass:'cost-paid', tags:['Gaming','Museum','Indoor'], tagC:['tp','tb','tg'], why:"Permanent video game and sci-fi exhibits make this a go-to for gaming-themed family days. Pokémon and Mario-adjacent exhibits appear regularly. Rainy day perfect. Check their calendar for special gaming events.", isNew:false },
+      { id:'fam-earth-day', title:'Earth Day Free WA State Parks Access', co:'Washington State Parks', when:'Apr 22 · All day', url:'https://parks.wa.gov/', urlType:'live', cost:'FREE (no Discover Pass needed)', costClass:'cost-free', tags:['Outdoor','Hiking','Free'], tagC:['tg'], why:'One day a year, all Washington State Parks are free with no Discover Pass required. Perfect day for a family hike. Rattlesnake Ledge, Twin Falls, or Lake Serene for more adventure. Pack lunch and make it a full day.', isNew:true },
+      { id:'fam-story-walk', title:'Story Walk Read-Along at Lake Wilderness Arboretum', co:'Maple Valley · 3rd Saturdays', when:'3rd Saturdays · 10:30–11:30am', url:'https://www.lakewilderness.net/', urlType:'live', cost:'FREE', costClass:'cost-free', tags:['Nature','Learning','Free'], tagC:['tg','ty'], why:'Librarian-led outdoor reading program for ages 3–8 — walk the trail while reading a story posted on signs. Combines outdoor movement with reading. Great for the younger end of the boys age range.', isNew:false },
+      { id:'fam-digipen', title:'DigiPen Open World — Video Game & STEM Workshops', co:'MoPOP + DigiPen Campus', when:'Summer sessions opening', url:'https://openworld.digipen.edu/', urlType:'live', cost:'$799–1,599', costClass:'cost-paid', tags:['Gaming','STEM','Workshop'], tagC:['tp','tb','ty'], why:"DigiPen partnered with MoPOP to bring Open World classes to Seattle. Subjects include video game development, robotics, animation, sound design, and programming. Perfect if the boys are into gaming and want to make games.", isNew:false },
+    ]
+  },
+
+  date: {
+    'week-apr-12': [
+      { id:'date-orca-show', title:'The Orca Show — Intiman Cabaret', co:"Erickson Theater · 1524 Harvard Ave · 21+", when:'Apr 16–19 · Table seating + cocktails', url:'https://www.intiman.org/cabaret/', urlType:'live', cost:'Ticketed', costClass:'cost-paid', tags:['Comedy','Cabaret','Intimate'], tagC:['tr','tp','tg'], why:"A perimenopausal comedy cabaret about killer whales. Stand-up, pop song parodies, science. The Erickson Theater is intimate table seating with cocktail service — exactly the quirky, cozy date format you described. One of Seattle's best-kept secret venues.", isNew:true },
+      { id:'date-chekhov', title:'Chekhov Comedy Adaptations — Seagull Project', co:'Erickson Theater · 21+', when:'Apr 23–26 · Table seating', url:'https://www.intiman.org/cabaret/', urlType:'live', cost:'Ticketed', costClass:'cost-paid', tags:['Theater','Comedy','Quirky'], tagC:['tp','tr'], why:'Three world premiere adaptations of Anton Chekhov comedies — irreverent and bold. The same intimate Erickson Theater with cocktail lounge service. Perfect for a theater-loving couple who want something genuinely unusual.', isNew:true },
+      { id:'date-rabbit-box', title:'The Rabbit Box — Intimate Speakeasy Comedy & Music', co:'94 Pike St · Seattle', when:'Ongoing · Multiple shows weekly', url:'https://www.therabbitboxseattle.com/events', urlType:'live', cost:'$12–20', costClass:'cost-paid', tags:['Comedy','Live Music','Speakeasy'], tagC:['tr','tb','tp'], why:"No drink minimums, no bad seats in this intimate speakeasy. Sharp curated comedy on Saturdays, live intimate music on Sundays. This is the exact vibe — small, personal, and unexpected. Check their calendar weekly.", isNew:true },
+      { id:'date-singalong', title:"Totally '80s Sing-Along — Central Cinema", co:'Central Cinema · Capitol Hill', when:'Apr 18 · 8pm', url:'https://www.central-cinema.com/', urlType:'live', cost:'$17', costClass:'cost-paid', tags:['Quirky','Sing-Along','Fun'], tagC:['tp','ty','tr'], why:"30 music videos on screen with subtitles — Madonna, Prince, David Bowie, Depeche Mode. You sing along. It's goofy, it's fun, and it's a genuinely unique date format. Central Cinema serves food and drinks at your seat.", isNew:true },
+      { id:'date-north-bend-jazz', title:'North Bend Jazz Walk', co:'North Bend · 18 venues', when:'Late April · Evening', url:'https://www.northbendjazzwalk.com/', urlType:'web', cost:'Ticketed', costClass:'cost-paid', tags:['Live Music','Jazz','Quirky'], tagC:['tb','tg','tp'], why:"18 venues across North Bend each host a jazz band. You wander from spot to spot through a cozy mountain town. Intimate, local, and completely different from anything in Seattle proper. High school jazz bands kick off the evening.", isNew:true },
+      { id:'date-ben-schwartz', title:'Ben Schwartz & Friends — Paramount Theatre', co:'Paramount Theatre · Downtown', when:'Apr 25 · 8pm', url:'https://www.ticketmaster.com/', urlType:'web', cost:'Ticketed', costClass:'cost-paid', tags:['Comedy','Live Show','Big Venue'], tagC:['tr','tb'], why:'Ben Schwartz (Parks and Rec, Sonic) with surprise comedy guests at the iconic Paramount. A step up in scale but still a great date format — laughs guaranteed. Date classic: great show, dinner before.', isNew:true },
+      { id:'date-waterways-cruise', title:'Sunset Dinner Cruise — Waterways Cruises', co:'South Lake Union', when:'Various Fridays & Saturdays', url:'https://www.waterwaysvoyages.com/', urlType:'live', cost:'$80–120+', costClass:'cost-paid', tags:['Romantic','Scenic','Food'], tagC:['tg','ty','tp'], why:'Cruise Lake Union at sunset with wine and dinner. Passes iconic landmarks and waterfront estates. Something genuinely different and romantic. Check their themed cruises — wine tastings and themed nights are particularly good.', isNew:false },
+      { id:'date-cooking-class', title:'Hot Stove Society Cooking Class', co:'Hotel Andra · Downtown', when:'Various dates', url:'https://www.hotstovestudios.com/', urlType:'live', cost:'$85–150', costClass:'cost-paid', tags:['Food','Interactive','Date'], tagC:['ty','tg','tr'], why:'Cook a multi-course meal together with a professional chef at Hotel Andra. One of the best interactive date formats — you both do something, eat what you make, and leave with a skill. Classes sell out fast.', isNew:false },
+    ]
+  },
+
+  hangout: {
+    'week-apr-12': [
+      { id:'hang-masquerade', title:'Venice is Sinking Masquerade Ball', co:'Nippon Kan Theatre · 21+', when:'Apr 25 · Evening', url:'https://www.events12.com/seattle/', urlType:'web', cost:'$105', costClass:'cost-paid', tags:['Dance','Art','Big Event'], tagC:['tp','tb','tr'], why:'Venetian-themed masquerade with acrobats, psychics, a magician, and dancing all night. The type of event that's immersive, artistic, and packed with interesting people. Costume required — go all in.', isNew:true },
+      { id:'hang-pancakes-booze', title:'Pancakes & Booze Art Show', co:'El Corazon · Eastlake', when:'Late April · 21+', url:'https://www.thepancakesandboozeartshow.com/', urlType:'web', cost:'$21', costClass:'cost-paid', tags:['Art','DJ','Party'], tagC:['tp','tb','tg'], why:'70 local artists, free pancakes, DJ music, live body painting, bar. Exactly the vibe: beautiful art, lots of interesting people, danceable music, and utterly unique. Touring show that stops in Seattle.', isNew:true },
+      { id:'hang-fcukers', title:'Fcukers at Neumos — Electronic / House', co:'Neumos · Capitol Hill', when:'Apr 9 (this week)', url:'https://everout.com/seattle/', urlType:'web', cost:'Ticketed', costClass:'cost-paid', tags:['Dance Music','Club','Live'], tagC:['tb','tr'], why:'Electronic and house band that played Coachella and Glastonbury, opened for LCD Soundsystem. Described as "club-inspired beats and ethereal vocals" that "go hard." This is the type of dance music night worth catching live.', isNew:true },
+      { id:'hang-monkey-loft', title:'Monkey Loft — Ongoing DJ Nights', co:'Monkey Loft · SoDo', when:'Weekends · 21+', url:'https://www.eventbrite.com/d/wa--seattle/dj-events/', urlType:'web', cost:'$10–30', costClass:'cost-paid', tags:['Clubbing','DJ','Dance Music'], tagC:['tb','tp'], why:"Seattle's best dedicated electronic music club with proper production and rotating big-name DJ bookings. Rooftop deck overlooking the city. Check Eventbrite for upcoming headliners — Global Bounce and Afrobeats nights are standouts.", isNew:false },
+      { id:'hang-abba-night', title:'ABBA Night at The Swedish Club', co:'Swedish Club · Dexter Ave', when:'Apr 25 · 21+', url:'https://www.swedishclubnw.org/', urlType:'web', cost:'$72', costClass:'cost-paid', tags:['Dance','Theme Night','Fun'], tagC:['ty','tp','tr'], why:"DJ plays ABBA and Euro pop, then Seattle tribute band Abbagrahics performs live on the dance floor. Nordic food. Sounds absurd — it is. Exactly the type of unique, people-packed, joyful night worth doing with friends.", isNew:true },
+      { id:'hang-19hz', title:'19hz.info — Seattle Electronic Music Calendar', co:'Multiple venues · City-wide', when:'Updated weekly', url:'https://19hz.info/eventlisting_Seattle.php', urlType:'web', cost:'Varies', costClass:'cost-varies', tags:['DJ','Electronic','Resource'], tagC:['tb','tg'], why:"The definitive Seattle electronic music event calendar — every DJ night, club night, and rave across 30+ venues updated weekly. Kremwerk, Baba Yaga, Hidden Hall, and Hazard Factory are worth bookmarking. Check this weekly.", isNew:false },
+      { id:'hang-tedx', title:'TEDxUofW — "Imprints We Leave"', co:'UW Kane Hall · University District', when:'Apr 19 · 10:30am–3:45pm', url:'https://www.ted.com/tedx', urlType:'web', cost:'Ticketed', costClass:'cost-paid', tags:['Intellectual','Unique','Big Event'], tagC:['tp','tb','tg'], why:"This year's theme: memories and the imprints we leave on the world. Passionate speakers doing short talks. A genuinely different hangout format — intellectually stimulating, great conversation starter. Not every hangout needs to be nightlife.", isNew:true },
+      { id:'hang-belly-dance', title:'Tribal Fest Hafla — Belly Dance Festival', co:'Shoreline Community College', when:'Apr 11–12 (this weekend)', url:'https://everout.com/seattle/', urlType:'web', cost:'Free daytime / Ticketed evening', costClass:'cost-varies', tags:['Art','Dance','Festival'], tagC:['tp','tr','tg'], why:'Free daytime haflas (open dance performances), evening showcases, a marketplace, workshops, and food trucks. Artsy, inclusive, full of energy, and packed with interesting people from across the dance community. Exactly the "beautiful artsy event with lots of people" vibe.', isNew:true },
+    ]
+  },
+
+  kids: {
+    'week-apr-12': [
+      { id:'kids-parkour', title:'Parkour Visions — Youth Parkour Camps', co:'Various Seattle sites', when:'Ongoing · Ages 6+', url:'https://parkourvisions.org/', urlType:'live', cost:'$100–200/week', costClass:'cost-paid', tags:['Physical','Outdoor','Skills'], tagC:['tg','tr','ty'], why:'Parkour builds balance, strength, spatial awareness, and confidence. Parkour Visions runs structured camps across Seattle that teach real skills — rolls, vaults, climbing. For active boys who need physical challenges.', isNew:false },
+      { id:'kids-bouldering', title:'Seattle Bouldering Project — Youth Climbing', co:'Fremont / U-District / SLU', when:'Spring camps Apr 13–17 + ongoing', url:'https://seattleboulderingproject.com/', urlType:'live', cost:'$100/day or membership', costClass:'cost-paid', tags:['Climbing','Physical','Skills'], tagC:['tg','tb'], why:'Rock climbing builds problem-solving, strength, and fearlessness. Spring break camps run obstacle courses, climbing instruction, and team challenges. Day memberships available for a casual visit with the boys any weekend.', isNew:true },
+      { id:'kids-cooking', title:'Frog Legs Cooking School — Kids Cooking Camps', co:'University Village / Kirkland / Redmond', when:'Spring break Apr 6–17 + ongoing', url:'https://froglegslearning.com/', urlType:'live', cost:'$80+/day', costClass:'cost-paid', tags:['Cooking','Life Skills','Creative'], tagC:['ty','tg'], why:"One of the best life skills you can teach a boy: how to cook. Frog Legs runs themed camps including 'Mario's Intergalactic Kitchen Camp' — which hits the video game theme perfectly. Ages 4–14. Multiple Eastside locations.", isNew:true },
+      { id:'kids-snapology', title:'Snapology LEGO Robotics — Sammamish/Redmond', co:'Inside Urban Air · Sammamish area', when:'After school + camps · Ages 5+', url:'https://www.snapology.com/washington-redmond/', urlType:'live', cost:'Varies by program', costClass:'cost-varies', tags:['STEM','Robotics','Lego'], tagC:['tb','tp','tg'], why:'LEGO-based robotics and engineering classes literally inside Urban Air — build something, then go play. Teaches engineering thinking through building. Perfect for boys who love LEGO and want to make it do things.', isNew:false },
+      { id:'kids-digipen-game', title:'DigiPen Open World — Video Game Dev for Kids', co:'MoPOP partnership · Seattle', when:'Summer sessions open now', url:'https://openworld.digipen.edu/', urlType:'live', cost:'$799–1,599/week', costClass:'cost-paid', tags:['Gaming','Coding','Creative'], tagC:['tp','tb','ty'], why:"If a boy loves Pokémon and Mario, show him how games are made. DigiPen runs video game programming, art and animation, and game design workshops. K–12. The closest thing to a career path starting at age 8.", isNew:true },
+      { id:'kids-museum-flight', title:'Museum of Flight Aerospace Camp', co:'Boeing Field · Seattle', when:'Summer camps · Ages 7–15', url:'https://www.museumofflight.org/youth-programs/', urlType:'live', cost:'Discounted for members', costClass:'cost-paid', tags:['STEM','Aerospace','Science'], tagC:['tb','tg','ty'], why:'A STEM camp surrounded by real airplanes and spacecraft. Kids explore flight science, engineering, and space. Amazing motivation to learn math and physics when you can sit in a real cockpit. Sign up early.', isNew:false },
+      { id:'kids-arboretum-nature', title:'Washington Park Arboretum — Nature Exploration', co:'Washington Park · Seattle', when:'Ongoing · All ages · Free', url:'https://depts.washington.edu/wpa/', urlType:'live', cost:'FREE', costClass:'cost-free', tags:['Nature','Outdoor','Free'], tagC:['tg','ty'], why:'3 miles of trails through 230 acres of trees and plants. Teach the boys to identify trees, birds, and insects. Bring a field guide and make it a scavenger hunt. One of Seattle\'s finest free outdoor resources, always overlooked.', isNew:false },
+      { id:'kids-home-soldering', title:'Home Project: Learn to Solder — Electronics Starter Kit', co:'Amazon / Local hobby shops', when:'Any weekend', url:'https://www.amazon.com/s?k=beginner+soldering+kit+for+kids', urlType:'web', cost:'$20–50 kit', costClass:'cost-paid', tags:['Electronics','Home Project','Skills'], tagC:['ty','tb','tp'], why:"Teach the boys to solder. A $30 kit from Amazon comes with a simple LED circuit project. You work together, they learn a real technical skill (your domain), and something lights up at the end. One of the best bonding + skill-building activities for a dad with your background.", isNew:false },
+      { id:'kids-chess4life', title:'Chess4Life — Chess + Robotics Spring Camps', co:'Bellevue / Issaquah', when:'Apr 6–17 · Ages 6–12', url:'https://www.chess4life.com/', urlType:'live', cost:'$425+/week', costClass:'cost-paid', tags:['Chess','Strategy','Skills'], tagC:['tb','tp'], why:'Chess develops strategic thinking, patience, and planning. Chess4Life combines chess with robotics, LEGO, or table tennis. Multi-day spring break camps with tournament practice. Great for boys who like games with depth.', isNew:true },
+    ]
+  }
+};
+
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let curTab = 'jobs';
+let curPeriod = { jobs:'2026-04-11', family:'week-apr-12', date:'week-apr-12', hangout:'week-apr-12', kids:'week-apr-12' };
+let filters = { jobs:'all', family:'all', date:'all', hangout:'all', kids:'all' };
+let statuses = {};
+
+function load() { try { const s = localStorage.getItem('kris_v5'); if(s) statuses = JSON.parse(s); } catch(e){} }
+function save() { try { localStorage.setItem('kris_v5', JSON.stringify(statuses)); } catch(e){} }
+function getKey(tab, id) { return `${tab}::${curPeriod[tab]}::${id}`; }
+function getStatus(tab, id) { return statuses[getKey(tab,id)] || null; }
+function setStatus(tab, id, st) {
+  const k = getKey(tab,id);
+  if(statuses[k] === st) delete statuses[k];
+  else statuses[k] = st;
+  save();
+  renderAll();
+}
+
+// ═══════════════════════════════════
+// RENDER
+// ═══════════════════════════════════
+function switchTab(tab) {
+  curTab = tab;
+  document.querySelectorAll('.stab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `panel-${tab}`));
+  const s = SECTIONS[tab];
+  document.getElementById('sb-section-name').textContent = s.name;
+  document.getElementById('sb-section-sub').textContent = s.sub;
+  document.getElementById('sb-period-label').textContent = s.periodLabel;
+  renderSidebar();
+  renderPanel(tab);
+}
+
+function renderSidebar() {
+  const tab = curTab;
+  const periods = PERIODS[tab] || [];
+  const el = document.getElementById('period-list');
+  el.innerHTML = periods.map(p => {
+    const items = tab === 'jobs'
+      ? [...(DATA.jobs[p.key]?.core || []), ...(DATA.jobs[p.key]?.stretch || [])]
+      : (DATA[tab]?.[p.key] || []);
+    const vals = items.map(i => getStatus(tab, i.id)).filter(Boolean);
+    const gone = vals.filter(v=>v==='go').length;
+    const saved = vals.filter(v=>v==='save').length;
+    return `<div class="week-entry${p.key===curPeriod[tab]?' active':''}" onclick="switchPeriod('${tab}','${p.key}')">
+      <span class="we-date">${p.label}${p.isToday?'<span class="today-tag">This week</span>':''}</span>
+      <div class="we-meta">${items.length} picks · ${gone} going · ${saved} saved</div>
+    </div>`;
+  }).join('');
+}
+
+function switchPeriod(tab, key) { curPeriod[tab] = key; renderAll(); }
+
+function renderStats(tab, items) {
+  const vals = items.map(i => getStatus(tab, i.id));
+  const gone = vals.filter(v=>v==='go').length;
+  const saved = vals.filter(v=>v==='save').length;
+  const skipped = vals.filter(v=>v==='skip').length;
+  const unseen = items.length - vals.filter(Boolean).length;
+  document.getElementById(`${tab}-stats`).innerHTML = `
+    <div class="stat"><div class="stat-n">${items.length}</div><div class="stat-l">${tab==='jobs'?'Total':'Picks'}</div></div>
+    <div class="stat-div"></div>
+    <div class="stat"><div class="stat-n">${gone}</div><div class="stat-l">${tab==='jobs'?'Building':'Going'}</div></div>
+    <div class="stat-div"></div>
+    <div class="stat"><div class="stat-n">${saved}</div><div class="stat-l">Saved</div></div>
+    <div class="stat-div"></div>
+    <div class="stat"><div class="stat-n">${skipped}</div><div class="stat-l">Passed</div></div>
+    <div class="stat-div"></div>
+    <div class="stat"><div class="stat-n">${unseen}</div><div class="stat-l">Unreviewed</div></div>`;
+  document.getElementById(`cnt-${tab}`).textContent = items.length;
+}
+
+function renderCard(tab, item) {
+  const s = getStatus(tab, item.id);
+  const f = filters[tab];
+  if(f==='go' && s!=='go') return '';
+  if(f==='save' && s!=='save') return '';
+  if(f==='unseen' && s) return '';
+  const tags = item.tags.map((t,i)=>`<span class="tag ${item.tagC[i]}">${t}</span>`).join('');
+  const lbl = item.urlType==='live' ? '<span class="lbadge lb-live">✓ Live</span>' : '<span class="lbadge lb-web">Search ↗</span>';
+  const newBadge = item.isNew ? '<span class="lbadge lb-live" style="background:var(--gl);color:var(--g);">New</span>' : '';
+  const sc = s==='go'?'s-go':s==='save'?'s-save':s==='skip'?'s-skip':'';
+  const sp = s==='go'?'<span class="status-pill sp-go">Going</span>':s==='save'?'<span class="status-pill sp-save">Saved</span>':s==='skip'?'<span class="status-pill sp-skip">Passed</span>':'';
+  const goLabel = tab==='jobs' ? '⊕ Build Resume' : tab==='kids' ? '✓ Doing this' : '✓ Going';
+  const saveLabel = tab==='jobs' ? '◉ Interested' : '♥ Save for later';
+  return `<div class="card ${sc}" id="card-${tab}-${item.id}">
+    <div class="card-top">
+      <div class="card-title">
+        <a href="${item.url}" target="_blank" rel="noopener">${item.title}</a>${lbl}${newBadge}
+      </div>
+      <span class="cost ${item.costClass}">${item.cost}</span>
+    </div>
+    <div class="card-meta">${item.co}${item.when?`<span class="sep">·</span>${item.when}`:''}${item.level?`<span class="sep">·</span>${item.level}`:''}${sp?`<span class="sep">·</span>${sp}`:''}</div>
+    <div class="tags">${tags}</div>
+    <div class="why">${item.why}</div>
+    <div class="actions">
+      <button class="btn b-go${s==='go'?' on':''}" onclick="setStatus('${tab}','${item.id}','go')">${goLabel}</button>
+      <button class="btn b-save${s==='save'?' on':''}" onclick="setStatus('${tab}','${item.id}','save')">${saveLabel}</button>
+      <button class="btn b-skip${s==='skip'?' on':''}" onclick="setStatus('${tab}','${item.id}','skip')">✕ Pass</button>
+      <a class="btn b-link" href="${item.url}" target="_blank" rel="noopener">Open ↗</a>
+    </div>
+  </div>`;
+}
+
+function renderPanel(tab) {
+  const period = curPeriod[tab];
+  if(tab === 'jobs') {
+    const d = DATA.jobs[period] || { core:[], stretch:[] };
+    const all = [...d.core, ...d.stretch];
+    renderStats(tab, all);
+    document.getElementById('jobs-core').innerHTML = (d.core.length ? '<div class="sec-lbl">Core matches</div>' : '') + d.core.map(i=>renderCard(tab,i)).join('');
+    document.getElementById('jobs-stretch').innerHTML = (d.stretch.length ? '<div class="sec-lbl">Stretch picks</div>' : '') + d.stretch.map(i=>renderCard(tab,i)).join('');
+  } else {
+    const items = DATA[tab]?.[period] || [];
+    renderStats(tab, items);
+    const html = items.length ? items.map(i=>renderCard(tab,i)).join('') : '<div class="empty"><div class="empty-icon">📭</div><h3>No picks yet</h3><p>New weekly picks will appear here every Monday morning.</p></div>';
+    document.getElementById(`${tab}-cards`).innerHTML = html;
+  }
+}
+
+function renderAll() { renderSidebar(); renderPanel(curTab); }
+
+function setFilt(tab, f, btn) {
+  filters[tab] = f;
+  const toolbar = btn.closest('.toolbar');
+  toolbar.querySelectorAll('.filt').forEach(b => b.classList.toggle('on', b === btn));
+  renderPanel(tab);
+}
+
+function filterCards(tab) { renderPanel(tab); }
+
+// ═══════════════════════════════════
+// DEPLOY
+// ═══════════════════════════════════
+function openDeploy() { document.getElementById('deploy-modal').classList.add('show'); }
+function closeDeploy() { document.getElementById('deploy-modal').classList.remove('show'); document.getElementById('deploy-status').textContent = ''; document.getElementById('deploy-status').className = 'deploy-status'; }
+
+async function runDeploy() {
+  const token = document.getElementById('netlify-token').value.trim();
+  const siteId = document.getElementById('netlify-site').value.trim();
+  const statusEl = document.getElementById('deploy-status');
+  const btn = document.getElementById('deploy-go');
+  if(!token || !siteId) { statusEl.textContent = 'Please enter both your token and site ID.'; return; }
+  btn.disabled = true;
+  statusEl.className = 'deploy-status';
+  statusEl.textContent = 'Fetching current HTML...';
+  try {
+    const html = document.documentElement.outerHTML;
+    const blob = new Blob([html], { type: 'text/html' });
+    statusEl.textContent = 'Deploying to Netlify...';
+    const formData = new FormData();
+    formData.append('file', blob, 'index.html');
+    const res = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/zip' },
+      body: blob,
+    });
+    if(res.ok) {
+      const data = await res.json();
+      statusEl.className = 'deploy-status ok';
+      statusEl.textContent = `✓ Deployed! Live at: ${data.deploy_ssl_url || 'krisdailymail.netlify.app'} (may take ~30s)`;
+    } else {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+  } catch(e) {
+    statusEl.className = 'deploy-status err';
+    statusEl.textContent = `✗ Deploy failed: ${e.message}. Check your token and site ID.`;
+  }
+  btn.disabled = false;
+}
+
+// ═══════════════════════════════════
+// UTILS
+// ═══════════════════════════════════
+function toast(msg) {
+  const el = document.getElementById('toast-el');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+document.getElementById('tn-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+load();
+renderAll();
+</script>
+</body>
+</html>
